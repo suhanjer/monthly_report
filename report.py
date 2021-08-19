@@ -1,8 +1,17 @@
 import sqlite3
 from openpyxl import Workbook, load_workbook
 
-filepath = "test.xlsx"
+#imports xlsx_to_db.py from the same folder in order to create db file from sales.xlsx
+#+++++++++++++++++++++++++++++++++
+import xlsx_to_db
+
+xlsx_to_db.main()
+#=================================
+
+filepath = "report.xlsx"
 storages_like = ['Ташкентская', 'Рыскулова', 'КарТаун', 'Ломова', 'Естая']
+#БРЕНД = Voltman Tubor
+brands = ['БРЕНД', 'ENERGIZER', 'МУТЛУ', 'HYUNDAI', 'ТУБОР', 'Clarios', 'VARTA', 'КОРЕЯ', 'УКРАИНА', 'КИТАЙ', 'БАРС', 'КАЗАХСТАН']
 
 #establishes connection to database
 def connect_to_db(db_file):
@@ -264,17 +273,11 @@ def sales_by_vehicle(conn):
 def brand(conn):
     cur = conn.cursor()
 
-    brands = []
-    cur.execute("SELECT DISTINCT Brand FROM current")
-    brands_unedited = cur.fetchall()
-    for i in brands_unedited:
-        brands.append(i[0])
-
     by_brand = {}
     for i in storages_like:
         brand_data = []
         for j in brands:
-            cur.execute(f"SELECT SUM(Quantity), SUM(Price) FROM current WHERE Storage LIKE '%{i}%' AND Brand = '{j}'")
+            cur.execute(f"SELECT SUM(Quantity), SUM(Price) FROM current WHERE Storage LIKE '%{i}%' AND Brand LIKE '%{j}%'")
             values = cur.fetchall()[0]
             count = values[0]
             price = values[1]
@@ -300,7 +303,7 @@ def brand(conn):
 
     total_by_brands = []
     for i in brands:
-        cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Brand = '{i}'")
+        cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Brand LIKE '%{i}%'")
         total_by_brands.append(cur.fetchall()[0][0])
     total_by_brands.insert(0, "Total")
 
@@ -310,7 +313,7 @@ def brand(conn):
         ws.append(row)
     #====================================================
 
-    ws.append(["", "", "", "", "", "", "", "", "", "", "", ""])
+    ws.append(["", "", "", "", "", "", "", "", "", "", ""])
 
     #for quantity precentage values of brands
     #++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -334,7 +337,7 @@ def brand(conn):
     quantity_total = cur.fetchall()[0][0]
     data_by_brands = []
     for i in brands:
-        cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Brand = '{i}'")
+        cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Brand LIKE '%{i}%'")
         quantity_by_brand = cur.fetchall()[0][0]
         if quantity_by_brand == None:
             data_by_brands.append(None)
@@ -348,7 +351,7 @@ def brand(conn):
         ws.append(row)
     #====================================================
 
-    ws.append(["", "", "", "", "", "", "", "", "", "", "", ""])
+    ws.append(["", "", "", "", "", "", "", "", "", "", ""])
 
     #for price precentage values of brands
     #++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -372,7 +375,7 @@ def brand(conn):
     price_total = cur.fetchall()[0][0]
     data_by_brands = []
     for i in brands:
-        cur.execute(f"SELECT SUM(Price) FROM current WHERE Brand = '{i}'")
+        cur.execute(f"SELECT SUM(Price) FROM current WHERE Brand LIKE '%{i}%'")
         price_by_brand = cur.fetchall()[0][0]
         if price_by_brand == None:
             data_by_brands.append(None)
@@ -388,6 +391,50 @@ def brand(conn):
 
     wb.save(filepath)
 
+#calculations by battery size
+def bodytype(conn):
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT DISTINCT Bodytype FROM current")
+    bodytype_list_unedited = cur.fetchall()
+    bodytype_list = []
+    for i in bodytype_list_unedited:
+        bodytype_list.append(i[0])
+    
+    cities = get_cities(conn)
+
+
+    data = []
+
+    for city in cities:
+        data.append(("Моноблок", "Количество", "Сумма","Доля от количества", "Доля от суммы"))
+        cur.execute(f"SELECT SUM(Quantity), SUM(Price) FROM current WHERE City = '{city}'")
+        city_total = cur.fetchall()
+        city_quantity = city_total[0][0]
+        if city_quantity == None:
+            continue
+        city_price = city_total[0][1]
+        city_total = (city, city_quantity, city_price, "100.0%", "100.0%")
+        for bodytype in bodytype_list:
+            cur.execute(f"SELECT SUM(Quantity), SUM(Price) FROM current WHERE City = '{city}' AND Bodytype = '{bodytype}'")
+            batterytype = cur.fetchall()
+            batterytype_quantity = batterytype[0][0]
+            batterytype_price = batterytype[0][1]
+            if batterytype_quantity == None:
+                data.append((bodytype, batterytype_quantity, batterytype_price, None, None))
+                continue
+            data.append((bodytype, batterytype_quantity, batterytype_price, f"{round(batterytype_quantity/city_quantity*100, 1)}%", f"{round(batterytype_price/city_price*100, 1)}%"))
+        data.append(city_total)
+        data.append(("", "", "", "", "", ))
+
+    wb = load_workbook(filepath)
+    ws = wb.create_sheet("Моноблок")
+
+    for row in data:
+        ws.append(row)
+    
+    wb.save(filepath)
+
 def manage_sales(conn):
     cur = conn.cursor()
 
@@ -398,7 +445,7 @@ def manage_sales(conn):
     for i in manager_list_unedited:
         manager_list.append(i[0])
 
-    manager_sales = [("Менеджер", "Колличество", "Сумма", "Средняя стоимость", "Доля продаж в магазине (количество)", "Доля продаж в магазине (сумма)")]
+    manager_sales = [("Менеджер", "Количество", "Сумма", "Средняя стоимость", "Доля продаж в магазине (количество)", "Доля продаж в магазине (сумма)")]
     for i in storages_like:
         for j in manager_list:
             cur.execute(f"SELECT SUM(Quantity), SUM(Price) FROM current WHERE Manager = '{j}' AND Storage LIKE '%{i}%'")
@@ -466,7 +513,7 @@ def manager_by_vehicle(conn):
     data = []
     for i in vehicles:
         data.append(i)
-    data.insert(0, "Менеджер-колличество")
+    data.insert(0, "Менеджер-Количество")
     data = [tuple(data)]
     #=======================
 
@@ -490,7 +537,7 @@ def manager_by_vehicle(conn):
     data = []
     for i in vehicles:
         data.append(i)
-    data.insert(0, "Менеджер-колличество-проценты в разрезе собственных продаж")
+    data.insert(0, "Менеджер-количество-проценты в разрезе собственных продаж")
     data = [tuple(data)]
     #=======================
 
@@ -529,12 +576,6 @@ def manager_brand(conn):
     for i in manager_list_unedited:
         manager_list.append(i[0])
 
-    brands = []
-    cur.execute("SELECT DISTINCT Brand FROM current")
-    brands_unedited = cur.fetchall()
-    for i in brands_unedited:
-        brands.append(i[0])
-
     wb = load_workbook(filepath)
     ws = wb.create_sheet("Менеджер-бренд")
 
@@ -547,7 +588,7 @@ def manager_brand(conn):
     for i in manager_list:
         by_brands = []
         for j in brands:
-            cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Manager = '{i}' AND Brand = '{j}'")
+            cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Manager = '{i}' AND Brand LIKE '%{j}%'")
             quantity = cur.fetchall()[0][0]
             by_brands.append(quantity)
         by_brands.insert(0, i)
@@ -571,7 +612,7 @@ def manager_brand(conn):
         if quantity_total == None:
             continue
         for j in brands:
-            cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Manager = '{i}' AND Brand = '{j}'")
+            cur.execute(f"SELECT SUM(Quantity) FROM current WHERE Manager = '{i}' AND Brand LIKE '%{j}%'")
             quantity = cur.fetchall()[0][0]
             if quantity == None:
                 by_brands.append(None)
@@ -608,6 +649,8 @@ def main():
         sales_by_vehicle(conn)
 
         brand(conn)
+
+        bodytype(conn)
 
         manage_sales(conn)
 
