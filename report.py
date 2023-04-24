@@ -9,9 +9,9 @@ xlsx_to_db.main()
 #=================================
 
 filepath = "report.xlsx"
-storages_like = ['Ташкентская', 'Рыскулова', 'КарТаун', 'Ломова', 'Естая']
+storages_like = ['Ташкентская', 'Рыскулова', 'КарТаун', 'Шемякина', 'Макатаева', 'Ломова', 'Естая', 'Нурмаганбетова']
 #БРЕНД = Voltman Tubor
-brands = ['БРЕНД', 'ENERGIZER', 'МУТЛУ', 'HYUNDAI', 'ТУБОР', 'Clarios', 'VARTA', 'КОРЕЯ', 'УКРАИНА', 'КИТАЙ', 'БАРС', 'КАЗАХСТАН']
+brands = ['Voltman', 'Forlux', 'ENERGIZER', 'МУТЛУ', 'HYUNDAI', 'ТУБОР', 'Clarios', 'VARTA', 'КОРЕЯ', 'УКРАИНА', 'КИТАЙ', 'БАРС', 'КАЗАХСТАН']
 
 #establishes connection to database
 def connect_to_db(db_file):
@@ -252,6 +252,7 @@ def sales_by_vehicle(conn):
     data = [('Доля от количества', vehicles[0], vehicles[1], vehicles[2])]
 
     for i in by_storage:
+        print(i, by_storage[i][0][0], by_storage[i][1][0], by_storage[i][2][0])
         data.append((i, f"{round(by_storage[i][0][0]/(by_storage[i][0][0] + by_storage[i][1][0] + by_storage[i][2][0])*100, 1)}%", f"{round(by_storage[i][1][0]/(by_storage[i][0][0] + by_storage[i][1][0] + by_storage[i][2][0])*100, 1)}%", f"{round(by_storage[i][2][0]/(by_storage[i][0][0] + by_storage[i][1][0] + by_storage[i][2][0])*100, 1)}%"))
 
     for row in data:
@@ -420,7 +421,7 @@ def bodytype(conn):
             batterytype = cur.fetchall()
             batterytype_quantity = batterytype[0][0]
             batterytype_price = batterytype[0][1]
-            if batterytype_quantity == None:
+            if batterytype_quantity == None or batterytype_quantity == 0:
                 data.append((bodytype, batterytype_quantity, batterytype_price, None, None))
                 continue
             data.append((bodytype, batterytype_quantity, batterytype_price, f"{round(batterytype_quantity/city_quantity*100, 1)}%", f"{round(batterytype_price/city_price*100, 1)}%"))
@@ -459,6 +460,9 @@ def manage_sales(conn):
             sales = cur.fetchall()[0]
             storage_quantity = sales[0]
             storage_price = sales[1]
+            if storage_quantity == None or storage_quantity == 0:
+                manager_sales.append((f"{j} ({i})",quantity, price, round(avg, 0), None, None))
+                continue
             percentage_quantity = quantity/storage_quantity*100
             percentage_price = price/storage_price*100
             manager_sales.append((f"{j} ({i})",quantity, price, round(avg, 0), f"{round(percentage_quantity, 1)}%", f"{round(percentage_price, 1)}%"))
@@ -654,7 +658,7 @@ def main():
 
         manage_sales(conn)
 
-        manager_by_vehicle(conn)
+        #manager_by_vehicle(conn)
 
         manager_brand(conn)
 

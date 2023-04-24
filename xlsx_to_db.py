@@ -29,6 +29,12 @@ def read_xlsx(sales_file):
                 list_storage_current.append("КарТаун (дисконт)")
             else:
                 list_storage_current.append("КарТаун")
+        if 'Шемякина' in i:
+            list_city_current.append('Алматы')
+            if 'дисконт' in i:
+                list_storage_current.append("Шемякина (дисконт)")
+            else:
+                list_storage_current.append("Шемякина")
         if 'Ломова' in i:
             list_city_current.append('Павлодар')
             if 'дисконт' in i:
@@ -41,6 +47,18 @@ def read_xlsx(sales_file):
                 list_storage_current.append("Естая 83 (дисконт)")
             else:
                 list_storage_current.append("Естая 83")
+        if 'Макатаева' in i:
+            list_city_current.append('Алматы')
+            if 'дисконт' in i:
+                list_storage_current.append("Макатаева 127 (дисконт)")
+            else:
+                list_storage_current.append("Макатаева 127")
+        if 'Нурмаганбетова' in i:
+            list_city_current.append('Павлодар')
+            if 'дисконт' in i:
+                list_storage_current.append("Нурмаганбетова (дисконт)")
+            else:
+                list_storage_current.append("Нурмаганбетова")
 
     data_current['Город'] = list_city_current
     data_current['Склад'] = list_storage_current
@@ -66,6 +84,12 @@ def read_xlsx(sales_file):
                 list_storage_previous.append("КарТаун (дисконт)")
             else:
                 list_storage_previous.append("КарТаун")
+        if 'Шемякина' in i:
+            list_city_previous.append('Алматы')
+            if 'дисконт' in i:
+                list_storage_previous.append("Шемякина (дисконт)")
+            else:
+                list_storage_previous.append("Шемякина")
         if 'Ломова' in i:
             list_city_previous.append('Павлодар')
             if 'дисконт' in i:
@@ -78,6 +102,18 @@ def read_xlsx(sales_file):
                 list_storage_previous.append("Естая 83 (дисконт)")
             else:
                 list_storage_previous.append("Естая 83")
+        if 'Макатаева' in i:
+            list_city_previous.append('Алматы')
+            if 'дисконт' in i:
+                list_storage_previous.append("Макатаева 127 (дисконт)")
+            else:
+                list_storage_previous.append("Макатаева 127")
+        if 'Нурмаганбетова' in i:
+            list_city_previous.append('Павлодар')
+            if 'дисконт' in i:
+                list_storage_previous.append("Нурмаганбетова (дисконт)")
+            else:
+                list_storage_previous.append("Нурмаганбетова")
 
     data_previous['Город'] = list_city_previous
     data_previous['Склад'] = list_storage_previous
